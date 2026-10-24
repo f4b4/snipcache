@@ -24,7 +24,7 @@ phase in section 6 is meant to be executed as one or more focused work sessions.
 | 8 | Non-Markdown files | Rendered as a page with the whole file in one highlighted code block, a copy-whole-file button and a raw download link. |
 | 9 | Naming | Markdown pages are named after the first H1, else the file name without extension. Other files are named with their full file name. No images, no tags in v1. |
 | 10 | Editor scope v1 | Open, edit, save, new file, new folder. Rename, move, delete and preview are phase 2. |
-| 11 | Runtime | .NET 10 (LTS), Node 22, pnpm, React 19, TypeScript. |
+| 11 | Runtime | .NET 10 (LTS), Node 22.12 or newer (any even-numbered LTS; Node is build-time only), pnpm, React 19, TypeScript. |
 
 Two choices made while writing this plan, both easy to change:
 
@@ -292,7 +292,7 @@ jobs:
         with: { path: content }
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm, cache-dependency-path: builder/pnpm-lock.yaml }
+        with: { node-version: 24, cache: pnpm, cache-dependency-path: builder/pnpm-lock.yaml }
       - run: pnpm install --frozen-lockfile --filter site
         working-directory: builder
       - run: pnpm --filter site build
@@ -631,6 +631,13 @@ fully ticked.
   optional) and surface GitHub 401 as a clear error in the editor.
 - **Dynamic DNS and certbot.** Certificate renewal needs port 80 reachable;
   this is already proven for the Cestius apps on the same server.
+- **Node version.** Node is only a build tool (static site and SPA); nothing
+  runs on Node in production, so there is no runtime version to match. The
+  floor is Node 22.12 (Astro 6, pnpm 11), declared in `engines`. Local
+  development and `ci.yml` use any even-numbered LTS (`lts/*`). Only the
+  reusable `build-site.yml` pins a major (currently 24), because it runs in
+  other people's content repos and must not jump to a new LTS before the
+  builder has been tested on it; raise it deliberately.
 - **Reusable workflow trust.** Content repos run code from `snipcache@v1`.
   Only the owner can move the tag, and the workflow runs with the caller's
   Pages permissions only.

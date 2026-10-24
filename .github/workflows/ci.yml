@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  frontend:
+    name: Site and frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      # Reads the pnpm version from "packageManager" in package.json.
+      - uses: pnpm/action-setup@v4
+      # Add "cache: pnpm" once pnpm-lock.yaml is committed.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: lts/*
+      - run: pnpm install
+      - run: pnpm build
+      - run: pnpm test
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      # The steps switch on by themselves once the first project exists.
+      - name: Build
+        if: hashFiles('backend/**/*.csproj') != ''
+        run: dotnet build SnipCache.slnx --configuration Release
+      - name: Test
+        if: hashFiles('backend/**/*.csproj') != ''
+        run: dotnet test --solution SnipCache.slnx --configuration Release --no-build

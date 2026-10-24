@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-**SnipCache** (a "knowledge store") is in the
-**planning phase**. The design is approved and documented; implementation has not
-started. The repository is a local git repo with one commit and no remote yet.
+**SnipCache** (a "knowledge store") is being implemented phase by phase.
+**Phase 0 (repository bootstrap)** is in place: the monorepo skeleton and CI
+exist, but there are no packages or projects yet. No remote yet.
 
 Documents:
 
@@ -19,6 +19,27 @@ Documents:
 
 When implementing a phase, follow the plan's layout and update this file with the
 build, test and run commands as they come into existence.
+
+## Commands
+
+Requirements: Node 22.12 or newer (any even-numbered LTS; apt's `nodejs` is
+fine), pnpm (version pinned via `packageManager` in `package.json`; install with
+the standalone installer, corepack is gone from Node 25 on), .NET 10 SDK.
+
+```sh
+pnpm install
+pnpm build                              # build site/ and frontend/** packages
+pnpm test                               # Vitest, one runner for all packages (vitest.config.ts)
+pnpm test:watch
+dotnet build SnipCache.slnx
+dotnet test --solution SnipCache.slnx   # Microsoft.Testing.Platform (global.json)
+```
+
+New .NET projects must be added to `SnipCache.slnx`; new frontend packages are
+picked up by `pnpm-workspace.yaml`. CI (`.github/workflows/ci.yml`) runs the
+same commands on push to `main` and on PRs; the .NET steps are skipped until
+a `backend/**/*.csproj` exists. Once `pnpm-lock.yaml` is committed, add
+`cache: pnpm` to the setup-node step.
 
 ## Purpose
 
@@ -54,7 +75,8 @@ commit per save), and offers a bot endpoint `POST /bot/snippets` with an API key
   copies otherwise identical. Cestius is also the reference for conventions (Orval
   hooks instead of raw fetch, minimal APIs, xunit v3 on Microsoft.Testing.Platform,
   Vitest + RTL, Tailwind v4, systemd + nginx deploy scripts).
-- Runtime: .NET 10, Node 22, pnpm, React 19, TypeScript.
+- Runtime: .NET 10, Node >= 22.12 (build-time only, not pinned except in
+  `build-site.yml`), pnpm, React 19, TypeScript.
 - v1 editor scope: open, edit, save, new file, new folder. Rename/move/delete,
   preview, tags, images, MCP server and GitHub App auth are backlog.
 

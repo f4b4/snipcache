@@ -1,0 +1,4 @@
+packages:
+  - "site"
+  - "frontend/apps/*"
+  - "frontend/shared/*"

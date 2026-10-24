@@ -39,3 +39,21 @@ pnpm-debug.log*
 # Operating system files
 .DS_Store
 Thumbs.db
+
+# TypeScript and Astro caches
+*.tsbuildinfo
+.astro/
+
+# Generated site content (written by site/scripts/prepare-content.ts)
+site/src/content/docs/
+site/public/raw/
+site/src/generated/
+
+# Data Protection key ring (auth-cookie encryption keys, dev)
+.dp-keys/
+
+# Certificates and private keys
+*.pem
+
+# Deploy working directory
+.deploy-tmp/
