@@ -13,8 +13,8 @@ implemented: `site/` (Astro + Starlight + Pagefind) and the shared slug rule
 Pages, the owner's real snippets migrated. **Phase 3 (editor backend)** is
 implemented: `backend/shared/SnipCacheAuth` (copy of CestiusAuth),
 `backend/apps/SnipCacheEditor` (content API over Octokit or an in-memory fake)
-and their tests. The write check against the real repo with a PAT is still the
-owner's to do (see below). Next: phase 4 (editor frontend).
+and their tests; the manual read/write check against the real content repo
+passed. Next: phase 4 (editor frontend).
 
 Repositories (all public, owner `f4b4`):
 
