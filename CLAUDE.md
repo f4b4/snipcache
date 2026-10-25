@@ -10,8 +10,7 @@ implemented: `site/` (Astro + Starlight + Pagefind) and the shared slug rule
 `frontend/shared/content-rules` (`@snipcache/content-rules`). **Phase 2
 (reusable workflow, template, first deployment)** is implemented:
 `.github/workflows/build-site.yml`, tag `v1`, both sibling repos deploying to
-Pages. Migrating the owner's real snippets into the content repo is still
-open. Next: phase 3 (editor backend).
+Pages, the owner's real snippets migrated. Next: phase 3 (editor backend).
 
 Repositories (all public, owner `f4b4`):
 
