@@ -7,22 +7,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **SnipCache** (a "knowledge store") is being implemented phase by phase.
 **Phase 0 (repository bootstrap)** is done. **Phase 1 (site builder)** is
 implemented: `site/` (Astro + Starlight + Pagefind) and the shared slug rule
-`frontend/shared/content-rules` (`@snipcache/content-rules`). Next: phase 2
-(reusable workflow, template, first real deployment).
+`frontend/shared/content-rules` (`@snipcache/content-rules`). **Phase 2
+(reusable workflow, template, first deployment)** is implemented:
+`.github/workflows/build-site.yml`, tag `v1`, both sibling repos deploying to
+Pages. Migrating the owner's real snippets into the content repo is still
+open. Next: phase 3 (editor backend).
 
 Repositories (all public, owner `f4b4`):
 
 - `https://github.com/f4b4/snipcache`: this code monorepo (`origin`)
-- `https://github.com/f4b4/snipcache-template`: template repo, still empty
-  (filled in phase 2)
+- `https://github.com/f4b4/snipcache-template`: template repo (marked as
+  template), site at `https://f4b4.github.io/snipcache-template/`
 - `https://github.com/f4b4/snipcache-content-f4b4`: the owner's content repo,
-  still empty (filled in phase 2)
+  site at `https://f4b4.github.io/snipcache-content-f4b4/`
+
+Both are checked out next to this repo (`../snipcache-template`,
+`../snipcache-content-f4b4`); their "Deploy SnipCache" workflow calls
+`build-site.yml@v1`.
 
 Documents:
 
 - [doc/snipcache-architecture-and-plan.md](doc/snipcache-architecture-and-plan.md) —
   **source of truth**: decisions, architecture, component design, phased plan.
   Read it before implementing anything.
+- [doc/content-repo-guide.md](doc/content-repo-guide.md) — user guide for
+  content repos: creating an instance, conventions, workflow inputs.
 - [doc/SnipCache-features.md](doc/SnipCache-features.md) — the original
   concept and feature list (historical; the plan supersedes its open questions).
 - `SnipCache.code-workspace` — VS Code workspace.
@@ -64,6 +73,17 @@ relative paths resolve from `site/`), `SNIPCACHE_SITE`, `SNIPCACHE_BASE`
 (`site/src/content/docs/`, `site/public/raw/`, `site/src/generated/`) are
 gitignored and rewritten on every run. Astro and Starlight are pinned to a
 minor (`~`); upgrade deliberately and re-run the build and `check-build`.
+
+Reusable workflow (`.github/workflows/build-site.yml`, plan section 4.2):
+content repos call it at `@v1` and check out the builder at the
+`builder_ref` input (default `v1`), so `v1` is what every content repo builds
+with. It derives `SNIPCACHE_SITE`/`SNIPCACHE_BASE` from the repo name, runs
+`build` and `check-build`, and deploys to Pages. After a compatible change
+on `main` (and green CI), move the tag; breaking changes get `v2`:
+
+```sh
+git tag -f -a v1 -m "SnipCache site builder v1" && git push -f origin v1
+```
 
 New .NET projects must be added to `SnipCache.slnx`; new frontend packages are
 picked up by `pnpm-workspace.yaml`. CI (`.github/workflows/ci.yml`) runs the

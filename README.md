@@ -13,8 +13,9 @@ This monorepo contains:
 - `.github/workflows/build-site.yml`: reusable workflow called by content repos
 - `backend/` and `frontend/`: the editor (ASP.NET Core minimal API, React + Monaco)
 
-To start your own collection, create a repo from the `snipcache-template`
-repository.
+To start your own collection, create a repo from
+[snipcache-template](https://github.com/f4b4/snipcache-template) and follow
+[doc/content-repo-guide.md](doc/content-repo-guide.md).
 
 See [doc/snipcache-architecture-and-plan.md](doc/snipcache-architecture-and-plan.md)
 for the architecture and implementation plan.
