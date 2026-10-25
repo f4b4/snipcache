@@ -28,6 +28,13 @@ jobs:
           node-version: lts/*
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The editor's hooks are generated from the committed OpenAPI spec and
+      # committed too; regenerating must not change anything.
+      - name: Generated API client is up to date
+        run: |
+          pnpm --filter editor generate:api
+          git add --intent-to-add frontend/apps/editor/src/api/generated
+          git diff --exit-code -- frontend/apps/editor/src/api/generated
       - run: pnpm build
       - name: Site build smoke test
         run: pnpm --filter site check-build
@@ -45,6 +52,11 @@ jobs:
       - name: Build
         if: hashFiles('backend/**/*.csproj') != ''
         run: dotnet build SnipCache.slnx --configuration Release
+      # The build rewrites openapi.json, which the editor's client is generated
+      # from; it must be committed with every API change.
+      - name: OpenAPI spec is up to date
+        if: hashFiles('backend/**/*.csproj') != ''
+        run: git diff --exit-code -- backend/apps/SnipCacheEditor/openapi/openapi.json
       - name: Test
         if: hashFiles('backend/**/*.csproj') != ''
         run: dotnet test --solution SnipCache.slnx --configuration Release --no-build

@@ -11,7 +11,10 @@ This monorepo contains:
 - `site/`: Astro + Starlight site builder with a Pagefind search index
   (`pnpm --filter site dev` shows the sample content)
 - `.github/workflows/build-site.yml`: reusable workflow called by content repos
-- `backend/` and `frontend/`: the editor (ASP.NET Core minimal API, React + Monaco)
+- `backend/` and `frontend/`: the editor (ASP.NET Core minimal API, React + Monaco);
+  run the backend with `dotnet run --project backend/apps/SnipCacheEditor
+  --launch-profile https` and the SPA with `pnpm dev`, then open
+  `http://localhost:5173` (in-memory sample content, no Keycloak needed)
 
 To start your own collection, create a repo from
 [snipcache-template](https://github.com/f4b4/snipcache-template) and follow

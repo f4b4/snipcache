@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // @snipcache/content-rules imports its modules with a .ts extension.
+    "allowImportingTsExtensions": true,
+    "types": ["vite/client"]
+  },
+  "include": ["src", "vite.config.ts", "orval.config.ts"],
+  "exclude": ["**/*.test.*", "**/*.spec.*"]
+}

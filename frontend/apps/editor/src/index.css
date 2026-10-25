@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* ── Tokens ────────────────────────────────────────────────────────────────
+ * A small semantic set. Components use the utilities (bg-surface, text-content,
+ * border-border, …); the dark values follow the OS setting, as does Monaco's
+ * theme (see useColorScheme).
+ * ───────────────────────────────────────────────────────────────────────── */
+@theme {
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+
+  --color-brand: #2563eb;
+  --color-brand-strong: #1d4ed8;
+
+  --color-surface: #ffffff;
+  --color-surface-raised: #f4f5f7;
+  --color-content: #1a1d23;
+  --color-content-muted: #5b626e;
+  --color-border: #e2e5ea;
+  --color-selected: #dbe7ff;
+  --color-danger: #b42318;
+  --color-success: #067647;
+}
+
+:root {
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --color-brand: #3b82f6;
+    --color-brand-strong: #60a5fa;
+    --color-surface: #0f1115;
+    --color-surface-raised: #1c1f26;
+    --color-content: #e7e9ee;
+    --color-content-muted: #9aa1ad;
+    --color-border: #2a2f3a;
+    --color-selected: #1e3a8a;
+    --color-danger: #f97066;
+    --color-success: #47cd89;
+  }
+}
+
+/* The app frame owns the viewport; the tree and the editor scroll themselves. */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  font-family: var(--font-sans);
+  background-color: var(--color-surface);
+  color: var(--color-content);
+}

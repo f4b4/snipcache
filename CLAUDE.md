@@ -14,7 +14,13 @@ Pages, the owner's real snippets migrated. **Phase 3 (editor backend)** is
 implemented: `backend/shared/SnipCacheAuth` (copy of CestiusAuth),
 `backend/apps/SnipCacheEditor` (content API over Octokit or an in-memory fake)
 and their tests; the manual read/write check against the real content repo
-passed. Next: phase 4 (editor frontend).
+passed. **Phase 4 (editor frontend)** is implemented:
+`frontend/shared/snipcache-auth` (`@snipcache/auth`, copy of `@cestius/auth`)
+and `frontend/apps/editor` (Vite + React + Monaco SPA); the full edit flow was
+checked in Chrome against the fake repository and read-only against the real
+one. Still open from phase 4's "done when": a save against the real repo
+through the SPA and sign-in through the real Keycloak (the client is created
+in phase 6). Next: phase 5 (bot API).
 
 Repositories (all public, owner `f4b4`):
 
@@ -112,6 +118,37 @@ dotnet test --project backend/tests/SnipCacheEditor.Tests
   The generator starts the host without secrets, so GitHub settings are not
   validated under `GetDocument.Insider`.
 - Health check: `GET /health` (anonymous, not proxied by nginx).
+
+Editor frontend (`frontend/apps/editor`, plan section 4.4):
+
+```sh
+dotnet run --project backend/apps/SnipCacheEditor --launch-profile https   # backend first
+pnpm dev                                # = pnpm --filter editor dev; http://localhost:5173
+pnpm --filter editor build              # tsc + vite build
+pnpm --filter editor generate:api       # Orval: openapi.json → src/api/generated (committed)
+```
+
+- Vite proxies `/api`, `/auth` and `/bot` to `https://localhost:7240`. With
+  `localhost.pem`/`localhost-key.pem` from mkcert in `frontend/apps/editor`
+  it serves https (needed for the real Keycloak redirect URI
+  `https://localhost:5173/auth/*`); without them http is enough for dev.
+- Without `Keycloak:Authority`, Development maps stand-ins for `/auth/login`
+  (signs in as `dev` and returns to `returnUrl`), `/auth/me` and
+  `/auth/logout` (`DevAuthEndpoints.cs`), so the SPA's normal sign-in flow
+  works against the fake repository.
+- Regenerate the client after every API change (`dotnet build`, then
+  `generate:api`) and commit both; CI fails when either is out of date.
+- Monaco is bundled locally (`src/features/editor/monaco.ts`); a language in
+  `languages.ts` must also be registered there. It is uncontrolled
+  (`defaultValue`) on purpose, see `CodeEditor.tsx`.
+- Component tests mock the generated hooks and replace `CodeEditor` with a
+  textarea; Vitest runs `frontend/**` under jsdom and `site/**` plus
+  `content-rules` under Node (projects in `vitest.config.ts`).
+
+pnpm enforces a minimum release age for new dependency versions. When an
+install fails because a version is too new, require an older one instead of
+adding `minimumReleaseAgeExclude` entries (pnpm may write them into
+`pnpm-workspace.yaml` by itself; revert that).
 
 New .NET projects must be added to `SnipCache.slnx`; new frontend packages are
 picked up by `pnpm-workspace.yaml`. CI (`.github/workflows/ci.yml`) runs the

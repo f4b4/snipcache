@@ -460,6 +460,27 @@ path validation, title and message defaults, 409 mapping, endpoint tests with
 - Dev: HTTPS with mkcert, proxy `/api`, `/auth` and `/bot` to the Kestrel port,
   same as the Cestius showcase.
 
+Implementation notes (phase 4):
+
+- Sign-in: `ProtectedRoute` sends visitors without a session to `/home`
+  with the wanted page as `returnUrl`; `/home` then starts the login right
+  away (an edit link from the site goes straight to Keycloak and back), unless
+  it already did so in the last 30 seconds, which prevents a redirect loop
+  when the cookie does not stick. Opened directly, `/home` shows a button.
+- A 403 from the API (user lacks `Auth:RequiredRole`) leads to
+  `/unauthorized`; the SPA does not know the role itself.
+- New file and new folder dialogs check the backend's name rules, existing
+  paths and slug collisions with existing pages (which would fail the site
+  build) before calling the API. New files need an extension.
+- The open file comes from the URL (`/edit/<path>`, segments encoded); paths
+  are encoded per segment before they go into generated API URLs.
+- Monaco is uncontrolled: the pane keeps the draft and remounts the editor
+  only when it replaces the text (reload after a conflict). Navigating to
+  another file with unsaved edits asks for confirmation (`useBlocker`).
+- Without Keycloak, Development maps stand-ins for `/auth/login`, `/auth/me`
+  and `/auth/logout` in the editor backend, so the SPA works unchanged
+  against the fake repository.
+
 ### 4.5 Deployment
 
 Copy `scripts/deploy` from Cestius and add `apps/snipcache.ps1` plus the
