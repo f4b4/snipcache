@@ -49,7 +49,7 @@ Two choices made while writing this plan, both easy to change:
  └──────────────────────────────────────────────┘        │    BFF auth ── OIDC ──► Keycloak  │
                  ▲ uses workflow @v1                     │    Octokit.net ── REST ──► GitHub │
  ┌──────────────────────────────────────────────┐        └──────────────────────────────────┘
- │  f4b4-content (from snipcache-template)   │ ◄── commits via Contents API ─────┘
+ │  snipcache-content-f4b4 (from snipcache-template)   │ ◄── commits via Contents API ─────┘
  │   folders + .md/.ps1/.sh/.bat/.sql files     │
  │   .github/workflows/deploy.yml               │
  │      name: "Deploy SnipCache"                │
@@ -267,7 +267,7 @@ and `astro build`). Input: `SNIPCACHE_CONTENT_DIR` (defaults to
 footer "Edit page" link remains and points to the same URL.
 
 **Local development**: `pnpm --filter site dev` runs prepare-content on the
-sample tree, then `astro dev`. `SNIPCACHE_CONTENT_DIR=../../f4b4-content
+sample tree, then `astro dev`. `SNIPCACHE_CONTENT_DIR=../../snipcache-content-f4b4
 pnpm --filter site build` builds the real content locally.
 
 ### 4.2 Reusable workflow and template
@@ -291,6 +291,7 @@ jobs:
       - uses: actions/checkout@v4
         with: { path: content }
       - uses: pnpm/action-setup@v4
+        with: { version: 12 }
       - uses: actions/setup-node@v4
         with: { node-version: 24, cache: pnpm, cache-dependency-path: builder/pnpm-lock.yaml }
       - run: pnpm install --frozen-lockfile --filter site
@@ -383,12 +384,12 @@ implementation `GitHubContentRepository`:
 
 | Key | Example | Source |
 |-----|---------|--------|
-| `GitHub:Owner` | `cborchard` | appsettings |
-| `GitHub:Repository` | `snipcache-content` | appsettings |
+| `GitHub:Owner` | `f4b4` | appsettings |
+| `GitHub:Repository` | `snipcache-content-f4b4` | appsettings |
 | `GitHub:Branch` | `main` | appsettings |
 | `GitHub:Token` | fine-grained PAT | environment file `GitHub__Token` |
 | `GitHub:UseFake` | `true` in dev without token | appsettings.Development |
-| `Site:BaseUrl` | `https://cborchard.github.io/snipcache-content` | appsettings |
+| `Site:BaseUrl` | `https://f4b4.github.io/snipcache-content-f4b4` | appsettings |
 | `Bot:ApiKey` | random 32+ bytes, base64 | environment file `Bot__ApiKey` |
 | `Auth:RequiredRole` | `snipcache-editor` or empty | appsettings |
 | `Keycloak:Authority` | `https://auth-colmena.freeddns.org/realms/<realm>` | appsettings |

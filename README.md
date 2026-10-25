@@ -20,8 +20,7 @@ for the architecture and implementation plan.
 
 ## Development
 
-Requirements: Node 22.12 or newer (any even-numbered LTS), pnpm (version pinned
-in `package.json`), .NET 10 SDK.
+Requirements: Node 22.12 or newer (any even-numbered LTS), pnpm 12, .NET 10 SDK.
 
 ```sh
 pnpm install

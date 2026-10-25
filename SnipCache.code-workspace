@@ -1,8 +1,8 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {}
+  "folders": [
+    { "path": "." , "name": "snipcache" },
+    { "path": "../snipcache-template", "name": "template" },
+    { "path": "../snipcache-content-f4b4", "name": "content" }
+  ],
+  "settings": {}
 }

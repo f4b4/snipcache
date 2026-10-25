@@ -5,8 +5,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project status
 
 **SnipCache** (a "knowledge store") is being implemented phase by phase.
-**Phase 0 (repository bootstrap)** is in place: the monorepo skeleton and CI
-exist, but there are no packages or projects yet. No remote yet.
+**Phase 0 (repository bootstrap)** is done: the monorepo skeleton and CI exist
+(CI green), but there are no packages or projects yet. Next: phase 1 (site
+builder).
+
+Repositories (all public, owner `f4b4`):
+
+- `https://github.com/f4b4/snipcache`: this code monorepo (`origin`)
+- `https://github.com/f4b4/snipcache-template`: template repo, still empty
+  (filled in phase 2)
+- `https://github.com/f4b4/snipcache-content-f4b4`: the owner's content repo,
+  still empty (filled in phase 2)
 
 Documents:
 
@@ -23,8 +32,8 @@ build, test and run commands as they come into existence.
 ## Commands
 
 Requirements: Node 22.12 or newer (any even-numbered LTS; apt's `nodejs` is
-fine), pnpm (version pinned via `packageManager` in `package.json`; install with
-the standalone installer, corepack is gone from Node 25 on), .NET 10 SDK.
+fine), pnpm 12 (globally installed with the standalone installer; not pinned
+in `package.json`, CI sets the major in `pnpm/action-setup`), .NET 10 SDK.
 
 ```sh
 pnpm install
@@ -38,8 +47,8 @@ dotnet test --solution SnipCache.slnx   # Microsoft.Testing.Platform (global.jso
 New .NET projects must be added to `SnipCache.slnx`; new frontend packages are
 picked up by `pnpm-workspace.yaml`. CI (`.github/workflows/ci.yml`) runs the
 same commands on push to `main` and on PRs; the .NET steps are skipped until
-a `backend/**/*.csproj` exists. Once `pnpm-lock.yaml` is committed, add
-`cache: pnpm` to the setup-node step.
+a `backend/**/*.csproj` exists. CI installs with `--frozen-lockfile`, so commit
+`pnpm-lock.yaml` with every dependency change.
 
 ## Purpose
 

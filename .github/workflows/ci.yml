@@ -12,13 +12,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      # Reads the pnpm version from "packageManager" in package.json.
+      # No "packageManager" pin in package.json; keep the major in step with
+      # the locally installed pnpm (lockfile format).
       - uses: pnpm/action-setup@v4
-      # Add "cache: pnpm" once pnpm-lock.yaml is committed.
+        with:
+          version: 12
       - uses: actions/setup-node@v5
         with:
           node-version: lts/*
-      - run: pnpm install
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm test
 

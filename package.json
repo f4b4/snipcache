@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "description": "SnipCache monorepo: static site builder, reusable workflow and editor.",
-  "packageManager": "pnpm@11.14.0",
   "scripts": {
     "build": "pnpm --recursive --filter \"./site\" --filter \"./frontend/**\" build",
     "test": "vitest run --passWithNoTests",
