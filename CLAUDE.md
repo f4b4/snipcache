@@ -10,7 +10,11 @@ implemented: `site/` (Astro + Starlight + Pagefind) and the shared slug rule
 `frontend/shared/content-rules` (`@snipcache/content-rules`). **Phase 2
 (reusable workflow, template, first deployment)** is implemented:
 `.github/workflows/build-site.yml`, tag `v1`, both sibling repos deploying to
-Pages, the owner's real snippets migrated. Next: phase 3 (editor backend).
+Pages, the owner's real snippets migrated. **Phase 3 (editor backend)** is
+implemented: `backend/shared/SnipCacheAuth` (copy of CestiusAuth),
+`backend/apps/SnipCacheEditor` (content API over Octokit or an in-memory fake)
+and their tests. The write check against the real repo with a PAT is still the
+owner's to do (see below). Next: phase 4 (editor frontend).
 
 Repositories (all public, owner `f4b4`):
 
@@ -84,10 +88,34 @@ on `main` (and green CI), move the tag; breaking changes get `v2`:
 git tag -f -a v1 -m "SnipCache site builder v1" && git push -f origin v1
 ```
 
+Editor backend (`backend/apps/SnipCacheEditor`, plan section 4.3):
+
+```sh
+dotnet run --project backend/apps/SnipCacheEditor --launch-profile https   # https://localhost:7240
+dotnet test --project backend/tests/SnipCacheEditor.Tests
+```
+
+- Development uses the in-memory fake repository seeded from
+  `site/sample-content` (`GitHub:UseFake`, `GitHub:FakeSeedDirectory` in
+  `appsettings.Development.json`); restarting resets it.
+- While `Keycloak:Authority` is empty (the default), Development maps
+  `GET /auth/dev-login?name=&email=&roles=`, which issues a session cookie
+  without Keycloak. The cookie is `Secure`, so use the https URL:
+  `curl -sk -c jar "https://localhost:7240/auth/dev-login?name=me"`, then
+  `curl -sk -b jar https://localhost:7240/api/tree`. Mutating `/api` calls need
+  `-H 'X-CSRF: 1'`.
+- Against the real repo: `dotnet user-secrets set GitHub:Token <PAT> --project
+  backend/apps/SnipCacheEditor` and run with `GitHub__UseFake=false`.
+  Every save is a real commit and starts "Deploy SnipCache".
+- `dotnet build` regenerates `backend/apps/SnipCacheEditor/openapi/openapi.json`
+  (committed; Orval reads it in phase 4). Commit it with every API change.
+  The generator starts the host without secrets, so GitHub settings are not
+  validated under `GetDocument.Insider`.
+- Health check: `GET /health` (anonymous, not proxied by nginx).
+
 New .NET projects must be added to `SnipCache.slnx`; new frontend packages are
 picked up by `pnpm-workspace.yaml`. CI (`.github/workflows/ci.yml`) runs the
-same commands on push to `main` and on PRs; the .NET steps are skipped until
-a `backend/**/*.csproj` exists. CI installs with `--frozen-lockfile`, so commit
+same commands on push to `main` and on PRs. CI installs with `--frozen-lockfile`, so commit
 `pnpm-lock.yaml` with every dependency change. Dependency build scripts are
 denied unless listed under `allowBuilds` in `pnpm-workspace.yaml` (esbuild's
 is not needed). CI builds the sample site with a non-root base and an editor

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Ship the XML /// docs so consuming apps get IntelliSense on the BFF surface. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Class library that uses ASP.NET Core types (auth, CORS, Data Protection,
+         minimal-API endpoints) without being a web app itself. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <!-- The only NuGet dependency: the OpenIdConnect handler (and, transitively,
+         the Microsoft.IdentityModel.* / System.IdentityModel.Tokens.Jwt types the
+         silent refresher needs). No EF Core / Npgsql here by design. -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.*" />
+  </ItemGroup>
+
+</Project>

@@ -376,10 +376,21 @@ Bot endpoint, API-key auth scheme, outside the CSRF guard:
 |--------|-------|---------|----------|
 | POST | `/bot/snippets` | `{ folder, fileName, content, message?, overwrite?: false }` | `{ path, sha, commitUrl, pageUrl }`; 409 if the file exists and `overwrite` is false |
 
-Validation: paths are normalised, must be relative, must not contain `..`,
-must not start with a dot segment, must not target `.github`. File names must
-match `^[\w .\-()]+$` after Unicode normalisation. Commit messages default to
-`Edit <path>`, `Add <path>`, `Add folder <path>`, `Bot: add <path>`.
+Validation: paths are normalised (NFC, `\` → `/`), must be relative, must not
+contain empty segments, control characters or any segment starting with a dot
+(this covers `..` and `.github`). Names the editor **creates** (new file, new
+folder, bot) must also match `^[\w .\-()]+$` without surrounding whitespace.
+Existing files are exempt from that pattern so content added through git
+(e.g. `WSL2, VS Code, Visual Studio.md`) can still be opened and saved. Commit
+messages default to `Edit <path>`, `Add <path>`, `Add folder <path>`,
+`Bot: add <path>`.
+
+Further status codes: 400 (validation problem with a `path` or `content`
+error), 415 for files that are not UTF-8 text, 502 when GitHub fails (a 401 from
+GitHub is reported as "access token rejected"). Errors are RFC 9457 problem
+details. In Development without `Keycloak:Authority`, `GET /auth/dev-login`
+issues a cookie session for a made-up user (curl and SPA work without
+Keycloak). `GET /health` is an anonymous health check.
 
 **Content repository service** (`Content/`): interface `IContentRepository`
 with `GetTreeAsync`, `GetFileAsync`, `PutFileAsync`, and an Octokit.net
@@ -390,8 +401,12 @@ implementation `GitHubContentRepository`:
 - File: `Repository.Content.GetAllContentsByRef(owner, repo, path, branch)`;
   returns decoded content and SHA.
 - Write: `CreateFile` / `UpdateFile` with `Author = (Keycloak display name,
-  email)` and `Committer = ("SnipCache", noreply address)`. Octokit's
-  `ApiValidationException` for a stale SHA maps to HTTP 409.
+  email)` and `Committer = (GitHub:CommitterName, GitHub:CommitterEmail)`,
+  default `SnipCache` / `noreply@snipcache.freeddns.org`. The author name is
+  `name`, else `preferred_username`; without an `email` claim the committer
+  address is used. Conflicts map to HTTP 409: a create on an existing path
+  (GitHub 422), a stale SHA (GitHub 409) and an update of a deleted file
+  (404/422).
 - An in-memory fake implements the same interface for tests and for local
   development without GitHub access (`GitHub:UseFake=true`).
 
@@ -487,7 +502,9 @@ image can wrap the published output; the configuration surface stays identical.
    `https://localhost:5173/auth/*` for dev. Post-logout redirect:
    `https://snipcache.freeddns.org/logged-out`. Web origins: both origins.
 3. Optional: role `snipcache-editor` and a mapper that puts client roles into
-   the `roles` claim; assign to your user.
+   the `roles` claim **of the ID token** (the BFF reads claims from the ID token
+   and maps only standard claims from userinfo); assign to your user and set
+   `Auth:RequiredRole`.
 
 **Server**
 

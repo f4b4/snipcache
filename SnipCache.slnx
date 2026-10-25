@@ -1,5 +1,12 @@
 <Solution>
-  <Folder Name="/shared/" />
-  <Folder Name="/apps/" />
-  <Folder Name="/tests/" />
+  <Folder Name="/shared/">
+    <Project Path="backend/shared/SnipCacheAuth/SnipCacheAuth.csproj" />
+  </Folder>
+  <Folder Name="/apps/">
+    <Project Path="backend/apps/SnipCacheEditor/SnipCacheEditor.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="backend/tests/SnipCacheAuth.Tests/SnipCacheAuth.Tests.csproj" />
+    <Project Path="backend/tests/SnipCacheEditor.Tests/SnipCacheEditor.Tests.csproj" />
+  </Folder>
 </Solution>

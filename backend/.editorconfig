@@ -1,0 +1,9 @@
+# .NET conventions for the SnipCache backend.
+# Scoped here (not repo root) so it applies only to .NET code, never the frontend.
+
+[*.cs]
+# One namespace per .NET project: every type lives in the project's default
+# (project-name) namespace; subfolders (Endpoints/, Middleware/, Users/, ...) are
+# physical organization, not namespace boundaries. Disabling this turns off IDE0130
+# ("namespace does not match folder structure"). See CLAUDE.md > Naming Conventions.
+dotnet_style_namespace_match_folder = false

@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Development secrets (GitHub:Token, Bot:ApiKey): dotnet user-secrets set ... -->
+    <UserSecretsId>snipcache-editor</UserSecretsId>
+  </PropertyGroup>
+
+  <!-- Build-time OpenAPI emission (same as the Cestius showcase): the document is written
+       under obj/ and promoted to the committed openapi/openapi.json that Orval reads. -->
+  <PropertyGroup>
+    <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/obj/openapi</OpenApiDocumentsDirectory>
+    <OpenApiGenerateDocumentsOnBuild>true</OpenApiGenerateDocumentsOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="10.0.*" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.*" PrivateAssets="all" />
+    <!-- Bundles the Serilog core, console and file sinks, CompactJsonFormatter and
+         ReadFrom.Configuration. -->
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Octokit" Version="14.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../shared/SnipCacheAuth/SnipCacheAuth.csproj" />
+  </ItemGroup>
+
+  <Target Name="NormalizeOpenApiDocument" AfterTargets="Build" Condition="Exists('$(OpenApiDocumentsDirectory)/$(MSBuildProjectName).json')">
+    <Copy SourceFiles="$(OpenApiDocumentsDirectory)/$(MSBuildProjectName).json" DestinationFiles="$(MSBuildProjectDirectory)/openapi/openapi.json" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>
