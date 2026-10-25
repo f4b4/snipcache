@@ -374,7 +374,14 @@ Bot endpoint, API-key auth scheme, outside the CSRF guard:
 
 | Method | Route | Request | Response |
 |--------|-------|---------|----------|
-| POST | `/bot/snippets` | `{ folder, fileName, content, message?, overwrite?: false }` | `{ path, sha, commitUrl, pageUrl }`; 409 if the file exists and `overwrite` is false |
+| POST | `/bot/snippets` | `{ folder?, fileName, content, message?, overwrite?: false }` | `{ path, sha, commitUrl, pageUrl }`; 201 on create, 200 on overwrite; 409 if the file exists and `overwrite` is false, or its page slug equals an existing file's |
+
+The bot authenticates with `X-Api-Key` (scheme `BotApiKey`, constant-time
+comparison of SHA-256 hashes); a cookie session does not count on `/bot`. Its
+commits are authored by `Bot:AuthorName` (default `SnipCache Bot`). The page
+URL and the slug collision check use `PageSlugs`, a C# port of
+`@snipcache/content-rules`; both implementations run the cases in
+`content-rules/src/slug-cases.json`. Details: [bot-api.md](bot-api.md).
 
 Validation: paths are normalised (NFC, `\` → `/`), must be relative, must not
 contain empty segments, control characters or any segment starting with a dot
@@ -670,7 +677,9 @@ fully ticked.
 - **Slug surprises.** Spaces, umlauts and dots in file names map to slugs that
   differ from the file name. The explicit slug rule and the collision check
   make this deterministic; the "View on site" link relies on the same rule in
-  the editor, so the rule must live in one shared module.
+  the editor, so the rule must live in one shared module. The bot's page URL
+  needs it in the backend too; that C# port is held to the TS module by a
+  shared file of test cases.
 - **H1 removal.** A Markdown file whose first H1 is not meant as the title
   will lose that heading in the rendered page. Setting `title` in frontmatter
   disables the removal.

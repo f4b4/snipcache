@@ -21,6 +21,8 @@ builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.NumberHandlin
 // cookie-only without /auth/* when Keycloak:Authority is unset.
 builder.Services.AddSnipCacheAuth(builder.Configuration, builder.Environment);
 builder.Services.AddEditorAuthorization(builder.Configuration);
+// X-Api-Key scheme and policy for /bot (Bot:ApiKey).
+builder.Services.AddBotAuthentication(builder.Configuration);
 
 // GitHub (Octokit) or the in-memory fake, per GitHub:UseFake.
 builder.Services.AddContentRepository(builder.Configuration);
@@ -32,6 +34,7 @@ builder.Services.AddHealthChecks();
 var app = builder.Build();
 
 app.WarnIfGitHubTokenExpiresSoon();
+app.WarnIfBotApiKeyMissing();
 
 // One line per request, early so auth and CSRF are timed too.
 app.UseSerilogRequestLogging();
@@ -59,6 +62,9 @@ var api = app.MapGroup("/api")
     .ProducesProblem(StatusCodes.Status403Forbidden);
 ConfigEndpoints.Map(api);
 ContentEndpoints.Map(api);
+
+// API-key auth, no cookie and no CSRF header.
+BotEndpoints.Map(app);
 
 app.Run();
 

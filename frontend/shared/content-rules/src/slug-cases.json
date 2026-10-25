@@ -1,0 +1,38 @@
+{
+  "$comment": "Slug rule test cases, shared by slug.test.ts and the backend's C# port (PageSlugsTests). Add a case here, not in one of the test files, so both implementations stay in step.",
+  "segments": [
+    ["Notes", "notes"],
+    ["count.sql", "count-sql"],
+    ["My Recipes", "my-recipes"],
+    ["Übersicht Größen", "uebersicht-groessen"],
+    ["Ärger ÖL", "aerger-oel"],
+    ["café crème", "cafe-creme"],
+    ["a - b", "a-b"],
+    ["a.!.b", "a-b"],
+    ["(draft) idea!", "draft-idea"],
+    ["snake_case-name", "snake_case-name"],
+    [".hidden.", "hidden"],
+    ["  spaced  out ", "spaced-out"],
+    ["日本語", "日本語"],
+    ["𠜎 note", "𠜎-note"],
+    ["WSL2, VS Code", "wsl2-vs-code"]
+  ],
+  "invalidSegments": ["!!!", "()", "-.-"],
+  "pages": [
+    ["README.md", ""],
+    ["readme.md", ""],
+    ["a/b/README.md", "a/b"],
+    ["a/b/note.md", "a/b/note"],
+    ["a/b/Note.MD", "a/b/note"],
+    ["a/b/count.sql", "a/b/count-sql"],
+    ["Shell Scripts/Backup Home.sh", "shell-scripts/backup-home-sh"],
+    ["Rezepte/Käse Spätzle.md", "rezepte/kaese-spaetzle"],
+    ["a/notes.mdx", "a/notes-mdx"],
+    ["Dockerfile", "dockerfile"]
+  ],
+  "urls": [
+    ["https://f4b4.github.io/snipcache-content-f4b4/", "sql/count.sql", "https://f4b4.github.io/snipcache-content-f4b4/sql/count-sql/"],
+    ["https://example.org", "README.md", "https://example.org/"],
+    ["https://example.org", "日本.md", "https://example.org/%E6%97%A5%E6%9C%AC/"]
+  ]
+}

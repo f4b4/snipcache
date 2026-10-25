@@ -13,10 +13,14 @@ namespace SnipCacheEditor.Tests;
 
 /// <summary>
 /// Hosts the editor in memory with the fake content repository and <see cref="TestAuthHandler"/>
-/// in place of the cookie session. <paramref name="requiredRole"/> sets <c>Auth:RequiredRole</c>.
+/// in place of the cookie session. <paramref name="requiredRole"/> sets <c>Auth:RequiredRole</c>,
+/// <paramref name="botApiKey"/> sets <c>Bot:ApiKey</c> (the real API-key scheme stays active).
 /// </summary>
-public sealed class EditorFactory(string? requiredRole = null) : WebApplicationFactory<Program>
+public sealed class EditorFactory(string? requiredRole = null, string? botApiKey = EditorFactory.BotApiKey)
+    : WebApplicationFactory<Program>
 {
+    public const string BotApiKey = "test-bot-key-0123456789abcdefghijklmnop";
+
     public InMemoryContentRepository Content => Services.GetRequiredService<InMemoryContentRepository>();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -28,6 +32,7 @@ public sealed class EditorFactory(string? requiredRole = null) : WebApplicationF
         builder.UseSetting("GitHub:CommitterEmail", "noreply@snipcache.test");
         builder.UseSetting("Site:BaseUrl", "https://owner.github.io/content/");
         builder.UseSetting("Auth:RequiredRole", requiredRole ?? string.Empty);
+        builder.UseSetting("Bot:ApiKey", botApiKey ?? string.Empty);
         builder.UseSetting("DataProtection:KeysPath", string.Empty);
         builder.UseSetting("App:DataDirectory", Path.Combine(Path.GetTempPath(), "snipcache-editor-tests"));
         builder.UseSetting("Serilog:MinimumLevel:Default", "Error");
@@ -56,6 +61,14 @@ public sealed class EditorFactory(string? requiredRole = null) : WebApplicationF
         if (email is not null) client.DefaultRequestHeaders.Add(TestAuthHandler.EmailHeader, email);
         if (roles is not null) client.DefaultRequestHeaders.Add(TestAuthHandler.RolesHeader, roles);
         client.DefaultRequestHeaders.Add("X-CSRF", "1");
+        return client;
+    }
+
+    /// <summary>A bot client sending <paramref name="apiKey"/> in <c>X-Api-Key</c> (none when null), without CSRF header.</summary>
+    public HttpClient Bot(string? apiKey = BotApiKey)
+    {
+        var client = CreateClient();
+        if (apiKey is not null) client.DefaultRequestHeaders.Add(BotAuthentication.HeaderName, apiKey);
         return client;
     }
 }

@@ -18,6 +18,9 @@ export default defineConfig({
   editor: {
     input: {
       target: "../../../backend/apps/SnipCacheEditor/openapi/openapi.json",
+      // The spec also describes the bot API (tag "Bot", API key, no cookie); the SPA
+      // never calls it.
+      filters: { tags: ["Editor"] },
     },
     output: {
       mode: "split",

@@ -22,6 +22,11 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.13" />
   </ItemGroup>
 
+  <!-- Slug rule cases shared with @snipcache/content-rules (PageSlugsTests). -->
+  <ItemGroup>
+    <None Include="../../../frontend/shared/content-rules/src/slug-cases.json" Link="slug-cases.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>

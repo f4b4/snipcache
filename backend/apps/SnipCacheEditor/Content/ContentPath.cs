@@ -73,21 +73,31 @@ public static partial class ContentPath
                 error = $"'{segment}': names must not contain control characters.";
                 return false;
             }
-            if (!newName)
-                continue;
-            if (segment != segment.Trim())
-            {
-                error = $"'{segment}': names must not start or end with whitespace.";
+            if (newName && !IsValidNewName(segment, out error))
                 return false;
-            }
-            if (!SegmentPattern().IsMatch(segment))
-            {
-                error = $"'{segment}': only letters, digits, spaces and _ . - ( ) are allowed.";
-                return false;
-            }
         }
 
         normalized = candidate;
+        error = null;
+        return true;
+    }
+
+    /// <summary>
+    /// The stricter rule for a name the editor creates, applied to one segment that already
+    /// passed <see cref="TryNormalize"/>: no surrounding whitespace, only <c>^[\w .\-()]+$</c>.
+    /// </summary>
+    public static bool IsValidNewName(string segment, [NotNullWhen(false)] out string? error)
+    {
+        if (segment != segment.Trim())
+        {
+            error = $"'{segment}': names must not start or end with whitespace.";
+            return false;
+        }
+        if (!SegmentPattern().IsMatch(segment))
+        {
+            error = $"'{segment}': only letters, digits, spaces and _ . - ( ) are allowed.";
+            return false;
+        }
         error = null;
         return true;
     }

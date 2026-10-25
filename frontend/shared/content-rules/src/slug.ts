@@ -1,6 +1,7 @@
 // How a content file path maps to the slug of its page on the site. The site
 // builder writes these slugs into the generated pages and the editor builds
-// its "View on site" links from them, so both must use this module.
+// its "View on site" links from them, so both must use this module. The
+// editor backend has a C# port (PageSlugs.cs); both run slug-cases.json.
 
 const TRANSLITERATIONS: Record<string, string> = {
   ä: "ae",

@@ -1,57 +1,28 @@
 import { isMarkdownPath, isReadmePath, pageSlug, pageUrl, slugifySegment } from "./slug.ts";
+// Shared with the backend's C# port of the rule (PageSlugsTests).
+import cases from "./slug-cases.json" with { type: "json" };
 
 describe("slugifySegment", () => {
-  it.each([
-    ["Notes", "notes"],
-    ["count.sql", "count-sql"],
-    ["My Recipes", "my-recipes"],
-    ["Übersicht Größen", "uebersicht-groessen"],
-    ["Ärger ÖL", "aerger-oel"],
-    ["café crème", "cafe-creme"],
-    ["a - b", "a-b"],
-    ["(draft) idea!", "draft-idea"],
-    ["snake_case-name", "snake_case-name"],
-    [".hidden.", "hidden"],
-    ["日本語", "日本語"],
-  ])("%s → %s", (input, expected) => {
+  it.each(cases.segments)("%s → %s", (input, expected) => {
     expect(slugifySegment(input)).toBe(expected);
   });
 
-  it("throws when nothing is left", () => {
-    expect(() => slugifySegment("!!!")).toThrow(/"!!!"/);
+  it.each(cases.invalidSegments)("throws for %s, where nothing is left", (input) => {
+    expect(() => slugifySegment(input)).toThrow(`"${input}"`);
   });
 });
 
 describe("pageSlug", () => {
-  it.each([
-    ["README.md", ""],
-    ["readme.md", ""],
-    ["a/b/README.md", "a/b"],
-    ["a/b/note.md", "a/b/note"],
-    ["a/b/Note.MD", "a/b/note"],
-    ["a/b/count.sql", "a/b/count-sql"],
-    ["Shell Scripts/Backup Home.sh", "shell-scripts/backup-home-sh"],
-    ["Rezepte/Käse Spätzle.md", "rezepte/kaese-spaetzle"],
-    ["a/notes.mdx", "a/notes-mdx"],
-    ["Dockerfile", "dockerfile"],
-  ])("%s → %s", (input, expected) => {
+  it.each(cases.pages)("%s → %s", (input, expected) => {
     expect(pageSlug(input)).toBe(expected);
   });
 });
 
 describe("pageUrl", () => {
-  it("joins base URL and slug with a trailing slash", () => {
-    expect(pageUrl("https://f4b4.github.io/snipcache-content-f4b4/", "sql/count.sql")).toBe(
-      "https://f4b4.github.io/snipcache-content-f4b4/sql/count-sql/",
-    );
-  });
-
-  it("maps the root README to the base URL", () => {
-    expect(pageUrl("https://example.org", "README.md")).toBe("https://example.org/");
-  });
-
-  it("percent-encodes non-ASCII slugs", () => {
-    expect(pageUrl("https://example.org", "日本.md")).toBe("https://example.org/%E6%97%A5%E6%9C%AC/");
+  // Joins base URL and slug with a trailing slash, maps the root README to the base URL,
+  // percent-encodes non-ASCII slugs.
+  it.each(cases.urls)("%s + %s → %s", (base, path, expected) => {
+    expect(pageUrl(base, path)).toBe(expected);
   });
 });
 

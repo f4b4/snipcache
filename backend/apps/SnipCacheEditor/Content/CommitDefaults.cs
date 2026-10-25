@@ -13,6 +13,8 @@ public static class CommitMessages
 
     public static string BotAdd(string path) => $"Bot: add {path}";
 
+    public static string BotUpdate(string path) => $"Bot: update {path}";
+
     /// <summary>The trimmed <paramref name="message"/>, or <paramref name="fallback"/> when it is blank.</summary>
     public static string OrDefault(string? message, string fallback) =>
         string.IsNullOrWhiteSpace(message) ? fallback : message.Trim();

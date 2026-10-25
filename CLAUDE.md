@@ -20,7 +20,11 @@ and `frontend/apps/editor` (Vite + React + Monaco SPA); the full edit flow was
 checked in Chrome against the fake repository and read-only against the real
 one. Still open from phase 4's "done when": a save against the real repo
 through the SPA and sign-in through the real Keycloak (the client is created
-in phase 6). Next: phase 5 (bot API).
+in phase 6). **Phase 5 (bot API)** is implemented: `POST /bot/snippets` with
+an `X-Api-Key` scheme, a C# port of the slug rule (`PageSlugs`) and
+[doc/bot-api.md](doc/bot-api.md); tested against the fake repository. Still
+open from its "done when": a `curl` save against the real repo (needs a
+deployed editor or a local run with the PAT). Next: phase 6 (deployment).
 
 Repositories (all public, owner `f4b4`):
 
@@ -41,6 +45,8 @@ Documents:
   Read it before implementing anything.
 - [doc/content-repo-guide.md](doc/content-repo-guide.md) — user guide for
   content repos: creating an instance, conventions, workflow inputs.
+- [doc/bot-api.md](doc/bot-api.md) — the bot endpoint: key setup, request,
+  status codes, curl, wiring a chat assistant.
 - [doc/SnipCache-features.md](doc/SnipCache-features.md) — the original
   concept and feature list (historical; the plan supersedes its open questions).
 - `SnipCache.code-workspace` — VS Code workspace.
@@ -118,6 +124,15 @@ dotnet test --project backend/tests/SnipCacheEditor.Tests
   The generator starts the host without secrets, so GitHub settings are not
   validated under `GetDocument.Insider`.
 - Health check: `GET /health` (anonymous, not proxied by nginx).
+- Bot API (`POST /bot/snippets`, [doc/bot-api.md](doc/bot-api.md)): needs
+  `Bot:ApiKey` (32+ characters, user-secrets in development, e.g.
+  `dotnet user-secrets set Bot:ApiKey "$(openssl rand -base64 32)" --project
+  backend/apps/SnipCacheEditor`), sent as `X-Api-Key`; no cookie, no CSRF
+  header. Without a key every `/bot` call is 401.
+- The slug rule exists twice: `@snipcache/content-rules` (TS) and
+  `Content/PageSlugs.cs` (bot page URLs and collision check). Both test suites
+  read `frontend/shared/content-rules/src/slug-cases.json`; change a rule in
+  both and add the case there.
 
 Editor frontend (`frontend/apps/editor`, plan section 4.4):
 
@@ -138,6 +153,8 @@ pnpm --filter editor generate:api       # Orval: openapi.json → src/api/genera
   works against the fake repository.
 - Regenerate the client after every API change (`dotnet build`, then
   `generate:api`) and commit both; CI fails when either is out of date.
+  Orval only takes operations tagged `Editor`; the `Bot` operation stays in
+  `openapi.json` but out of the SPA client.
 - Monaco is bundled locally (`src/features/editor/monaco.ts`); a language in
   `languages.ts` must also be registered there. It is uncontrolled
   (`defaultValue`) on purpose, see `CodeEditor.tsx`.
