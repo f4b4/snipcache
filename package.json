@@ -2,6 +2,7 @@
   "name": "snipcache",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "description": "SnipCache monorepo: static site builder, reusable workflow and editor.",
   "scripts": {
     "build": "pnpm --recursive --filter \"./site\" --filter \"./frontend/**\" build",

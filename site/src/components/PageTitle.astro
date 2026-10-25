@@ -1,0 +1,51 @@
+---
+// Starlight's page title plus the SnipCache toolbar: copy the whole source
+// file, open the raw file, edit it in the SnipCache editor.
+import { Icon } from "@astrojs/starlight/components";
+import Default from "@astrojs/starlight/components/PageTitle.astro";
+
+const { entry, editUrl } = Astro.locals.starlightRoute;
+const snipcache = entry.data.snipcache;
+---
+
+<Default />
+{
+  snipcache && (
+    <div class="snipcache-actions not-content print:hidden">
+      <button type="button" data-copy-file={snipcache.rawUrl}>
+        <Icon name="document" />
+        <span data-label>Copy file</span>
+      </button>
+      <a href={snipcache.rawUrl}>
+        <Icon name="external" />
+        Raw
+      </a>
+      {editUrl && (
+        <a href={editUrl.href}>
+          <Icon name="pencil" />
+          Edit
+        </a>
+      )}
+    </div>
+  )
+}
+
+<script>
+  for (const button of document.querySelectorAll<HTMLButtonElement>("[data-copy-file]")) {
+    const label = button.querySelector("[data-label]")!;
+    const initial = label.textContent;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    button.addEventListener("click", async () => {
+      try {
+        const response = await fetch(button.dataset.copyFile!);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        await navigator.clipboard.writeText(await response.text());
+        label.textContent = "Copied";
+      } catch {
+        label.textContent = "Copy failed";
+      }
+      clearTimeout(timer);
+      timer = setTimeout(() => (label.textContent = initial), 2000);
+    });
+  }
+</script>

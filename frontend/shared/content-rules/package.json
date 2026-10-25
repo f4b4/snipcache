@@ -1,0 +1,10 @@
+{
+  "name": "@snipcache/content-rules",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Rules shared by the site builder and the editor: how a content file path maps to a page slug.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

@@ -5,9 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project status
 
 **SnipCache** (a "knowledge store") is being implemented phase by phase.
-**Phase 0 (repository bootstrap)** is done: the monorepo skeleton and CI exist
-(CI green), but there are no packages or projects yet. Next: phase 1 (site
-builder).
+**Phase 0 (repository bootstrap)** is done. **Phase 1 (site builder)** is
+implemented: `site/` (Astro + Starlight + Pagefind) and the shared slug rule
+`frontend/shared/content-rules` (`@snipcache/content-rules`). Next: phase 2
+(reusable workflow, template, first real deployment).
 
 Repositories (all public, owner `f4b4`):
 
@@ -44,11 +45,34 @@ dotnet build SnipCache.slnx
 dotnet test --solution SnipCache.slnx   # Microsoft.Testing.Platform (global.json)
 ```
 
+Site builder (`site/`, see plan section 4.1):
+
+```sh
+pnpm --filter site dev                  # prepare-content on site/sample-content + astro dev (no search)
+pnpm --filter site build                # prepare-content + astro build (+ Pagefind index)
+pnpm --filter site preview              # serve dist/; needed to try search; Astro 7 daemonizes it
+                                        #   (stop with: pnpm --filter site exec astro preview stop)
+pnpm --filter site check-build          # smoke test of dist/ (pagefind, pages, raw copies, base, edit links)
+pnpm --filter site test
+SNIPCACHE_CONTENT_DIR=../../snipcache-content-f4b4 pnpm --filter site build   # real content
+```
+
+Build environment: `SNIPCACHE_CONTENT_DIR` (default `site/sample-content`,
+relative paths resolve from `site/`), `SNIPCACHE_SITE`, `SNIPCACHE_BASE`
+(e.g. `/snipcache-sample`), `SNIPCACHE_TITLE`, `SNIPCACHE_EDITOR_URL`.
+`check-build` must see the same values as the build. Generated files
+(`site/src/content/docs/`, `site/public/raw/`, `site/src/generated/`) are
+gitignored and rewritten on every run. Astro and Starlight are pinned to a
+minor (`~`); upgrade deliberately and re-run the build and `check-build`.
+
 New .NET projects must be added to `SnipCache.slnx`; new frontend packages are
 picked up by `pnpm-workspace.yaml`. CI (`.github/workflows/ci.yml`) runs the
 same commands on push to `main` and on PRs; the .NET steps are skipped until
 a `backend/**/*.csproj` exists. CI installs with `--frozen-lockfile`, so commit
-`pnpm-lock.yaml` with every dependency change.
+`pnpm-lock.yaml` with every dependency change. Dependency build scripts are
+denied unless listed under `allowBuilds` in `pnpm-workspace.yaml` (esbuild's
+is not needed). CI builds the sample site with a non-root base and an editor
+URL, then runs `check-build`.
 
 ## Purpose
 

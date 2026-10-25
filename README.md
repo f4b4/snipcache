@@ -9,6 +9,7 @@ through the GitHub API.
 This monorepo contains:
 
 - `site/`: Astro + Starlight site builder with a Pagefind search index
+  (`pnpm --filter site dev` shows the sample content)
 - `.github/workflows/build-site.yml`: reusable workflow called by content repos
 - `backend/` and `frontend/`: the editor (ASP.NET Core minimal API, React + Monaco)
 

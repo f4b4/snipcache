@@ -2,3 +2,5 @@ packages:
   - "site"
   - "frontend/apps/*"
   - "frontend/shared/*"
+allowBuilds:
+  esbuild: false

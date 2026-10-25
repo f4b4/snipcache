@@ -182,6 +182,7 @@ snipcache/
     package.json
     scripts/prepare-content.ts
     scripts/prepare-content.test.ts
+    scripts/check-build.ts     build smoke test (CI)
     src/content.config.ts
     src/components/PageTitle.astro
     src/styles/custom.css
@@ -195,6 +196,7 @@ snipcache/
     tests/SnipCacheAuth.Tests/
     tests/SnipCacheEditor.Tests/
   frontend/
+    shared/content-rules/      @snipcache/content-rules: path → slug rule (site + editor)
     shared/snipcache-auth/     copy of @cestius/auth as @snipcache/auth
     apps/editor/               Vite + React + Monaco SPA
   scripts/deploy/              copy of the Cestius deploy orchestrator, app "snipcache"
@@ -230,12 +232,21 @@ and `astro build`). Input: `SNIPCACHE_CONTENT_DIR` (defaults to
 | `a/b/count.sql` | `a/b/count.sql.md` | `count.sql` | `a/b/count-sql` |
 
 - Slugs are set explicitly in frontmatter so they stay predictable: each path
-  segment is lower-cased, dots and spaces become `-`, umlauts are transliterated,
-  other non-alphanumerics are dropped. Collisions fail the build with a message
-  naming both source files.
+  segment is lower-cased, umlauts are transliterated (`ä` → `ae`, `ß` → `ss`),
+  other accents stripped, dots and whitespace become `-`, everything except
+  letters, digits, `-` and `_` is dropped, and runs of `-` collapse. The rule
+  lives in `@snipcache/content-rules` (`frontend/shared/content-rules`), which
+  the editor reuses for "View on site". Collisions of slugs or generated page
+  paths fail the build with a message naming both source files.
 - Generated frontmatter: `title`, `slug`, `editUrl` (when `SNIPCACHE_EDITOR_URL`
   is set: `<editor>/edit/<original path>`), and a custom `snipcache` object
-  with `sourcePath`, `rawUrl`, `kind` (`markdown` or `file`) and `language`.
+  with `sourcePath`, `rawUrl` (including the base path), `kind` (`markdown` or
+  `file`) and `language`. From a Markdown file's own frontmatter only `title`
+  and a string `description` are carried over, so arbitrary keys cannot break
+  the schema validation; invalid YAML is dropped with a warning.
+- A `README.md` without frontmatter title or H1 is titled after its folder.
+  Without a root `README.md` a minimal home page is generated.
+- Code pages have no table of contents.
 - Code block pages use a fence longer than any fence inside the file content,
   with `title="<file name>"` so Expressive Code shows the name.
 - Language map: `ps1`, `psm1` → powershell; `sh`, `bash`, `zsh` → bash; `bat`,
@@ -245,8 +256,12 @@ and `astro build`). Input: `SNIPCACHE_CONTENT_DIR` (defaults to
 - Raw copies: every content file is copied to `public/raw/<original path>` so
   "copy whole file" and "open raw" work for Markdown sources too.
 - `sidebar.json`: nested groups mirroring folders. Folders first, then files,
-  both sorted case-insensitively. A folder with a README gets its index page
-  as the group's first entry.
+  both sorted case-insensitively (numbers in natural order). A folder with a
+  README gets its index page as the group's first entry. Groups start
+  collapsed; Starlight opens the one containing the current page. The home
+  page is not listed.
+- Warnings (skipped binaries, bad frontmatter) are printed as `::warning::`
+  annotations when running in GitHub Actions.
 
 **Starlight configuration** (`astro.config.mjs`):
 
@@ -294,7 +309,7 @@ jobs:
         with: { version: 12 }
       - uses: actions/setup-node@v4
         with: { node-version: 24, cache: pnpm, cache-dependency-path: builder/pnpm-lock.yaml }
-      - run: pnpm install --frozen-lockfile --filter site
+      - run: pnpm install --frozen-lockfile --filter site...   # site plus its workspace deps
         working-directory: builder
       - run: pnpm --filter site build
         working-directory: builder
@@ -413,8 +428,8 @@ path validation, title and message defaults, 409 mapping, endpoint tests with
 - Layout: left pane tree with expand/collapse, "New file" and "New folder"
   buttons; right pane Monaco with file name, dirty marker, Save button, link
   "View on site" built from `siteBaseUrl` and the same slug rule as
-  prepare-content (shared small `slug.ts` module copied into both packages or
-  published as `@snipcache/content-rules`, see phase 1).
+  prepare-content (`pageUrl` from the workspace package
+  `@snipcache/content-rules`, created in phase 1).
 - Monaco language from extension: markdown, powershell, shell, bat, sql, json,
   yaml, xml, plaintext.
 - Save: Ctrl+S or button → `PUT` with the loaded SHA. On 409 show a dialog:

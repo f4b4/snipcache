@@ -10,6 +10,12 @@ jobs:
   frontend:
     name: Site and frontend
     runs-on: ubuntu-latest
+    # The site is built from site/sample-content under a non-root base with an
+    # editor URL, the way content repos deploy it; check-build verifies that.
+    env:
+      SNIPCACHE_SITE: https://example.github.io
+      SNIPCACHE_BASE: /snipcache-sample
+      SNIPCACHE_EDITOR_URL: https://snipcache.example.org
     steps:
       - uses: actions/checkout@v5
       # No "packageManager" pin in package.json; keep the major in step with
@@ -23,6 +29,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      - name: Site build smoke test
+        run: pnpm --filter site check-build
       - run: pnpm test
 
   backend:
