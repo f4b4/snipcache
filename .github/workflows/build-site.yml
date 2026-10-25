@@ -1,0 +1,96 @@
+name: Build and deploy SnipCache site
+
+# Reusable workflow called by content repos ("Deploy SnipCache", see
+# doc/content-repo-guide.md). It checks out this repo at `builder_ref` as the
+# site builder and the calling repo as the content, builds the Starlight site
+# with its Pagefind index and deploys it to the caller's GitHub Pages.
+#
+# The caller grants the permissions (contents: read, pages: write,
+# id-token: write); the jobs below only narrow them.
+
+on:
+  workflow_call:
+    inputs:
+      site_title:
+        description: Site title shown in the header and the browser tab.
+        type: string
+        default: SnipCache
+      editor_url:
+        description: SnipCache editor origin, e.g. https://snipcache.freeddns.org. Empty hides the edit links.
+        type: string
+        default: ''
+      builder_ref:
+        description: Ref of f4b4/snipcache to build with. Keep it in step with the ref in `uses:`.
+        type: string
+        default: v1
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: f4b4/snipcache
+          ref: ${{ inputs.builder_ref }}
+          path: builder
+      - uses: actions/checkout@v5
+        with:
+          path: content
+      # Pages serves <owner>.github.io repos at the root and every other repo
+      # under /<repo>; the host name is always lower case.
+      - name: Derive site and base path
+        id: pages
+        env:
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+        run: |
+          owner="${OWNER,,}"
+          if [ "${REPO,,}" = "$owner.github.io" ]; then base=/; else base="/$REPO"; fi
+          echo "site=https://$owner.github.io" >> "$GITHUB_OUTPUT"
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "Site: https://$owner.github.io$base"
+      # Same pnpm major as the builder's lockfile. Node is pinned to a major
+      # here (unlike ci.yml) so content repos do not move to a new LTS before
+      # the builder has been tested on it.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: builder/pnpm-lock.yaml
+      - name: Install the site builder
+        run: pnpm install --frozen-lockfile --filter "site..."
+        working-directory: builder
+      - name: Build the site
+        run: pnpm --filter site build && pnpm --filter site check-build
+        working-directory: builder
+        env:
+          SNIPCACHE_CONTENT_DIR: ${{ github.workspace }}/content
+          SNIPCACHE_SITE: ${{ steps.pages.outputs.site }}
+          SNIPCACHE_BASE: ${{ steps.pages.outputs.base }}
+          SNIPCACHE_TITLE: ${{ inputs.site_title }}
+          SNIPCACHE_EDITOR_URL: ${{ inputs.editor_url }}
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: builder/site/dist
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
