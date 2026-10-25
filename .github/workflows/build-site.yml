@@ -56,7 +56,7 @@ jobs:
       # Same pnpm major as the builder's lockfile. Node is pinned to a major
       # here (unlike ci.yml) so content repos do not move to a new LTS before
       # the builder has been tested on it.
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 12
       - uses: actions/setup-node@v5
