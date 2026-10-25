@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "../snipcache-template",
+      "../snipcache-content-f4b4"
+    ]
+  }
+}
