@@ -97,6 +97,11 @@ on that repository only; see section 4.3 of
 
 - **Deploy job fails with "Pages not enabled" or HTTP 404**: set Settings →
   Pages → Source to "GitHub Actions", then re-run the workflow.
+- **The site shows the plain README instead of SnipCache**, or the Deploy job
+  fails with "Creating Pages deployment failed": the Pages source was reset to
+  "Deploy from a branch". This happens when the repository's visibility is
+  changed (private and back to public). Set Settings → Pages → Source to
+  "GitHub Actions" again and re-run "Deploy SnipCache".
 - **Deploy fails with a branch protection error**: Settings → Environments →
   `github-pages` must allow deployments from `main`.
 - **Build fails with a slug collision**: two files map to the same page address
