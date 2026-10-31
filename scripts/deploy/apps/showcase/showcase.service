@@ -1,0 +1,29 @@
+[Unit]
+Description=Showcase ASP.NET Core backend (Cestius)
+After=network.target
+
+[Service]
+Type=notify
+User=showcase
+WorkingDirectory=/opt/showcase
+ExecStart=/usr/bin/dotnet /opt/showcase/Showcase.dll
+Restart=on-failure
+RestartSec=5
+
+Environment=ASPNETCORE_ENVIRONMENT=Production
+# Loopback port behind nginx (Blondi=5002, verby=5001).
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5003
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+
+# No EnvironmentFile: Showcase has no DB and a public PKCE client (no secret), so
+# every prod value is non-secret config in appsettings.Production.json.
+
+# Harden the service.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/showcase/data
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
