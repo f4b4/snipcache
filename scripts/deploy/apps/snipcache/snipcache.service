@@ -1,0 +1,31 @@
+[Unit]
+Description=SnipCache editor (ASP.NET Core backend)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=snipcache
+WorkingDirectory=/opt/snipcache
+ExecStart=/usr/bin/dotnet /opt/snipcache/SnipCacheEditor.dll
+Restart=on-failure
+RestartSec=5
+
+Environment=ASPNETCORE_ENVIRONMENT=Production
+# Loopback port behind nginx (showcase=5003, Blondi=5002, verby=5001).
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5004
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+
+# Secrets (GitHub__Token, Bot__ApiKey). Read by systemd as root before dropping to
+# User=, so the file stays root:snipcache 600. Template: secrets.env.example.
+EnvironmentFile=/etc/snipcache/secrets.env
+
+# Harden the service.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/snipcache/data
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

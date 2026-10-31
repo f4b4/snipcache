@@ -29,7 +29,7 @@ startup). A key shorter than 32 characters stops the editor from starting.
 ## Request
 
 ```
-POST https://snipcache.freeddns.org/bot/snippets
+POST https://snipcache.duckdns.org/bot/snippets
 X-Api-Key: <key>
 Content-Type: application/json
 ```
@@ -83,7 +83,7 @@ usual SnipCache identity.
 ```sh
 export SNIPCACHE_BOT_KEY=...   # the key from the environment file
 
-curl -sS https://snipcache.freeddns.org/bot/snippets \
+curl -sS https://snipcache.duckdns.org/bot/snippets \
   -H "X-Api-Key: $SNIPCACHE_BOT_KEY" \
   -H 'Content-Type: application/json' \
   --data-binary @- <<'EOF'
@@ -102,7 +102,7 @@ To send a file as it is, let `jq` build the body:
 ```sh
 jq -n --arg folder SQL --arg fileName count.sql --rawfile content count.sql \
   '{folder: $folder, fileName: $fileName, content: $content}' |
-  curl -sS https://snipcache.freeddns.org/bot/snippets \
+  curl -sS https://snipcache.duckdns.org/bot/snippets \
     -H "X-Api-Key: $SNIPCACHE_BOT_KEY" -H 'Content-Type: application/json' --data-binary @-
 ```
 
@@ -156,7 +156,7 @@ Ways to give the assistant the tool:
   editor's generated description is in
   `backend/apps/SnipCacheEditor/openapi/openapi.json` (path `/bot/snippets`,
   schemas `SaveSnippetRequest` and `SaveSnippetResponse`); copy that path and
-  its schemas, add `servers: [{ url: "https://snipcache.freeddns.org" }]` and
+  its schemas, add `servers: [{ url: "https://snipcache.duckdns.org" }]` and
   an `apiKey` security scheme in the `X-Api-Key` header.
 
 Chat products that only accept MCP servers need the MCP server from the

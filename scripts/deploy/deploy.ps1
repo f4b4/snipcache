@@ -1,7 +1,7 @@
 #Requires -Version 7.0
 <#
 .SYNOPSIS
-    Deploy a Cestius monorepo app to its Linux server over SSH.
+    Deploy a SnipCache monorepo app to its Linux server over SSH.
 
 .DESCRIPTION
     One reusable orchestrator for every app. It reads the per-app variables from
@@ -15,17 +15,20 @@
     source. Onboarding another app is just a new apps/<App>.ps1; deploy.ps1 and
     lib/*.sh do not change.
 
-    Strategy (mirrors the Blondi/VcSuite reference): framework-dependent publish,
-    systemd-managed Kestrel behind nginx. The Showcase app has no database, so
-    there is no migration step and no secrets file — all prod config ships in
-    appsettings.Production.json.
+    Strategy (copied from the Cestius deploy scripts): framework-dependent publish,
+    systemd-managed Kestrel behind nginx. No database, so there is no migration
+    step. Non-secret prod config ships in appsettings.Production.json; secrets live
+    in /etc/<App>/secrets.env on the server, installed once from the optional
+    apps/<App>/secrets.env.example and never overwritten. An optional DuckDnsDomain
+    key makes -Setup install the DuckDNS updater timer (ddns/).
 
 .PARAMETER App
-    Per-app config to load: scripts/deploy/apps/<App>.ps1 (e.g. 'showcase').
+    Per-app config to load: scripts/deploy/apps/<App>.ps1 (e.g. 'snipcache').
 
 .PARAMETER Setup
-    First-time provisioning: service user, directories, perms, nginx site, and
-    systemd unit. Idempotent — safe to re-run.
+    First-time provisioning: service user, directories, perms, secrets template,
+    nginx site, systemd unit and (optionally) the DuckDNS timer. Idempotent — safe
+    to re-run.
 
 .PARAMETER ClientOnly
     Build and deploy only the React frontend.
@@ -37,11 +40,11 @@
     Re-push nginx.conf + the systemd unit and reload (no build).
 
 .EXAMPLE
-    ./scripts/deploy/deploy.ps1 showcase -Setup    # first-time provisioning
-    ./scripts/deploy/deploy.ps1 showcase           # client + server
-    ./scripts/deploy/deploy.ps1 showcase -ServerOnly
-    ./scripts/deploy/deploy.ps1 showcase -ClientOnly
-    ./scripts/deploy/deploy.ps1 showcase -ConfigOnly
+    ./scripts/deploy/deploy.ps1 snipcache -Setup    # first-time provisioning
+    ./scripts/deploy/deploy.ps1 snipcache           # client + server
+    ./scripts/deploy/deploy.ps1 snipcache -ServerOnly
+    ./scripts/deploy/deploy.ps1 snipcache -ClientOnly
+    ./scripts/deploy/deploy.ps1 snipcache -ConfigOnly
 #>
 [CmdletBinding()]
 param(
@@ -64,6 +67,7 @@ $RepoRoot = Split-Path (Split-Path $DeployDir -Parent) -Parent   # scripts/deplo
 $LibDir = Join-Path $DeployDir 'lib'
 $AppConfig = Join-Path $DeployDir "apps/$App.ps1"
 $AssetsDir = Join-Path $DeployDir "apps/$App"
+$DdnsDir = Join-Path $DeployDir 'ddns'
 
 # ---------------------------------------------------------------------------
 # Load per-app config (variables only)
@@ -79,6 +83,8 @@ foreach ($k in 'AppName', 'SshHost', 'Domain', 'Port', 'ClientDir', 'ClientFilte
 }
 
 $AppName = $cfg.AppName
+$DuckDnsDomain = if ($cfg.ContainsKey('DuckDnsDomain')) { $cfg.DuckDnsDomain } else { '' }
+$SecretsTemplate = Join-Path $AssetsDir 'secrets.env.example'
 $SshHost = $cfg.SshHost
 $UploadDir = "~/$AppName-upload"
 $ClientDist = Join-Path (Join-Path $RepoRoot $cfg.ClientDir) 'dist'
@@ -193,6 +199,7 @@ $envLines = @(
     "SERVICE_USER=$AppName"
     "DEPLOY_SERVER=$([int][bool]$deployServer)"
     "DEPLOY_CLIENT=$([int][bool]$deployClient)"
+    "DUCKDNS_DOMAIN=$DuckDnsDomain"
 )
 [System.IO.File]::WriteAllText($envFile, ($envLines -join "`n") + "`n")
 
@@ -203,6 +210,13 @@ Invoke-Ssh "mkdir -p $UploadDir/config"
 Invoke-Scp $envFile "$UploadDir/deploy.env"
 Invoke-Scp (Join-Path $AssetsDir 'nginx.conf')           "$UploadDir/config/"
 Invoke-Scp (Join-Path $AssetsDir "$AppName.service")     "$UploadDir/config/"
+if (Test-Path $SecretsTemplate) { Invoke-Scp $SecretsTemplate "$UploadDir/config/" }
+if ($Setup -and $DuckDnsDomain) {
+    Invoke-Ssh "mkdir -p $UploadDir/ddns"
+    foreach ($f in 'duckdns-update.sh', 'duckdns@.service', 'duckdns@.timer') {
+        Invoke-Scp (Join-Path $DdnsDir $f) "$UploadDir/ddns/"
+    }
+}
 
 if ($deployServer) {
     Write-Host '  server binaries...'

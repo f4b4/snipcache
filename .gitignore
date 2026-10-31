@@ -57,3 +57,6 @@ site/src/generated/
 
 # Deploy working directory
 .deploy-tmp/
+
+# Deploy staging (scripts/deploy/deploy.ps1)
+.deploy-tmp/

@@ -76,7 +76,7 @@ jobs:
 | Input | Default | Meaning |
 |-------|---------|---------|
 | `site_title` | `SnipCache` | Title in the header and browser tab. |
-| `editor_url` | empty | Origin of a SnipCache editor, e.g. `https://snipcache.freeddns.org`. When set, every page gets an **Edit** button and an "Edit page" footer link to `<editor_url>/edit/<file path>`. Empty hides them. |
+| `editor_url` | empty | Origin of a SnipCache editor, e.g. `https://snipcache.duckdns.org`. When set, every page gets an **Edit** button and an "Edit page" footer link to `<editor_url>/edit/<file path>`. Empty hides them. |
 | `builder_ref` | `v1` | Ref of `f4b4/snipcache` the site is built with. Leave it at the default; if you change the `@v1` in `uses:`, change this to the same ref. |
 
 `v1` is a moving tag that receives compatible improvements, so content repos
@@ -85,7 +85,7 @@ which you opt into by changing both `@v1` and `builder_ref`.
 
 ## Connect the editor
 
-The editor (`https://snipcache.freeddns.org` for the owner's instance) writes
+The editor (`https://snipcache.duckdns.org` for the owner's instance) writes
 to one content repo through the GitHub API, one commit per save; every save
 triggers "Deploy SnipCache". To link a site to it, set `editor_url` as above
 and push. The editor itself is configured with the content repo's owner and

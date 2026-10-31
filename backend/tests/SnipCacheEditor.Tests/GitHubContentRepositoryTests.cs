@@ -142,7 +142,7 @@ public class GitHubContentRepositoryTests
         Assert.Contains("\"message\":\"Add SQL/count.sql\"", body);
         Assert.Contains("\"branch\":\"main\"", body);
         Assert.Contains("\"author\":{\"name\":\"Ada Lovelace\",\"email\":\"ada@example.org\"", body);
-        Assert.Contains("\"committer\":{\"name\":\"SnipCache\",\"email\":\"noreply@snipcache.freeddns.org\"", body);
+        Assert.Contains("\"committer\":{\"name\":\"SnipCache\",\"email\":\"noreply@snipcache.duckdns.org\"", body);
         Assert.Contains($"\"content\":\"{Convert.ToBase64String(Encoding.UTF8.GetBytes("select 1;"))}\"", body);
         Assert.DoesNotContain("\"sha\"", body);
     }

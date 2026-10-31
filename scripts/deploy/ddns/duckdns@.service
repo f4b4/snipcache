@@ -1,0 +1,16 @@
+[Unit]
+Description=DuckDNS update for %i.duckdns.org
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/duckdns-update %i
+# Token file stays root-only; the unprivileged dynamic user reads the copy
+# systemd places in $CREDENTIALS_DIRECTORY.
+LoadCredential=token:/etc/duckdns/%i.token
+DynamicUser=yes
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true

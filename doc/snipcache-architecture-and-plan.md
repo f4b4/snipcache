@@ -20,7 +20,7 @@ phase in section 6 is meant to be executed as one or more focused work sessions.
 | 4 | Git write path | **GitHub REST API via Octokit.net**, no local clone. One commit per save. |
 | 5 | Authentication | **BFF pattern** copied from Cestius: ASP.NET Core runs OIDC code flow + PKCE against Keycloak, session in an encrypted HttpOnly cookie, CSRF header on mutating calls. |
 | 6 | Bot API | v1 is a single REST endpoint to **save** a snippet, authenticated with an API key. MCP server and search come later. |
-| 7 | Hosting | Keycloak: `https://auth-colmena.freeddns.org`, dedicated client. Editor at `https://snipcache.freeddns.org` on the Ubuntu 24.04 server, deployed like the Cestius apps (systemd-managed Kestrel behind nginx). Reading site on GitHub Pages. |
+| 7 | Hosting | Keycloak: `https://auth-colmena.freeddns.org`, dedicated client. Editor at `https://snipcache.duckdns.org` on the Ubuntu 24.04 server, deployed like the Cestius apps (systemd-managed Kestrel behind nginx). Reading site on GitHub Pages. |
 | 8 | Non-Markdown files | Rendered as a page with the whole file in one highlighted code block, a copy-whole-file button and a raw download link. |
 | 9 | Naming | Markdown pages are named after the first H1, else the file name without extension. Other files are named with their full file name. No images, no tags in v1. |
 | 10 | Editor scope v1 | Open, edit, save, new file, new folder. Rename, move, delete and preview are phase 2. |
@@ -41,7 +41,7 @@ Two choices made while writing this plan, both easy to change:
 ```
                        GitHub                                      Ubuntu server
  ┌──────────────────────────────────────────────┐        ┌──────────────────────────────────┐
- │  snipcache (code repo, public)               │        │  nginx  (TLS, snipcache.freeddns) │
+ │  snipcache (code repo, public)               │        │  nginx  (TLS, snipcache.duckdns)  │
  │   site/        Astro + Starlight builder     │        │    /            → SPA (static)    │
  │   .github/workflows/build-site.yml (reusable)│        │    /api /auth /bot → Kestrel      │
  │   backend/     SnipCacheEditor (ASP.NET)     │        │                                   │
@@ -59,7 +59,7 @@ Two choices made while writing this plan, both easy to change:
                  │
                  ▼
         Reader's browser: static pages, Pagefind search runs client-side,
-        copy buttons, "Edit" link → https://snipcache.freeddns.org/edit/<path>
+        copy buttons, "Edit" link → https://snipcache.duckdns.org/edit/<path>
 ```
 
 ### 2.1 The three repositories
@@ -121,7 +121,7 @@ out `snipcache` at the pinned tag and the content repo → `prepare-content` →
 Expected duration: one to two minutes.
 
 **Edit from the site.** Reader clicks "Edit" on a page →
-`https://snipcache.freeddns.org/edit/<original path>` → SPA's `ProtectedRoute`
+`https://snipcache.duckdns.org/edit/<original path>` → SPA's `ProtectedRoute`
 sees no session → `/auth/login?returnUrl=/edit/<path>` → Keycloak → back with
 cookie → SPA loads tree and file → user edits in Monaco → Ctrl+S → `PUT
 /api/files/<path>` with the file's SHA → commit → tree cache invalidated →
@@ -345,7 +345,7 @@ jobs:
     uses: f4b4/snipcache/.github/workflows/build-site.yml@v1
     with:
       site_title: My SnipCache
-      editor_url: https://snipcache.freeddns.org
+      editor_url: https://snipcache.duckdns.org
 ```
 
 `v1` is a moving tag in the code repo that is advanced after each compatible
@@ -409,7 +409,7 @@ implementation `GitHubContentRepository`:
   returns decoded content and SHA.
 - Write: `CreateFile` / `UpdateFile` with `Author = (Keycloak display name,
   email)` and `Committer = (GitHub:CommitterName, GitHub:CommitterEmail)`,
-  default `SnipCache` / `noreply@snipcache.freeddns.org`. The author name is
+  default `SnipCache` / `noreply@snipcache.duckdns.org`. The author name is
   `name`, else `preferred_username`; without an `email` claim the committer
   address is used. Conflicts map to HTTP 409: a create on an existing path
   (GitHub 422), a stale SHA (GitHub 409) and an update of a deleted file
@@ -431,7 +431,7 @@ implementation `GitHubContentRepository`:
 | `Auth:RequiredRole` | `snipcache-editor` or empty | appsettings |
 | `Keycloak:Authority` | `https://auth-colmena.freeddns.org/realms/<realm>` | appsettings |
 | `Keycloak:ClientId` | `snipcache` | appsettings |
-| `App:BaseAddress` | `https://snipcache.freeddns.org` | appsettings |
+| `App:BaseAddress` | `https://snipcache.duckdns.org` | appsettings |
 | `Auth:CookieName` | `snipcache-auth` | appsettings |
 | `DataProtection:ApplicationName` / `KeysPath` | `snipcache` / `/var/lib/snipcache/data/dp-keys` | appsettings |
 
@@ -491,17 +491,27 @@ Implementation notes (phase 4):
 ### 4.5 Deployment
 
 Copy `scripts/deploy` from Cestius and add `apps/snipcache.ps1` plus the
-`apps/snipcache/` assets:
+`apps/snipcache/` assets (details: [scripts/deploy/README.md](../scripts/deploy/README.md)):
 
-- `nginx.conf`: server `snipcache.freeddns.org`, TLS via certbot webroot, `/`
-  serves `/var/www/snipcache`, `/api`, `/auth` and `/bot` proxy to Kestrel on a
-  local port, SPA fallback to `index.html`.
+- `nginx.conf`: server `snipcache.duckdns.org` (IPv4 and IPv6), TLS via certbot
+  webroot, `/` serves `/var/www/snipcache`, `/api`, `/auth` and `/bot` proxy to
+  Kestrel on `127.0.0.1:5004`, SPA fallback to `index.html`.
 - `snipcache.service`: `Type=notify`, `EnvironmentFile=/etc/snipcache/secrets.env`
   (holds `GitHub__Token` and `Bot__ApiKey`, mode 600, owner root, group
   `snipcache`), `WorkingDirectory=/opt/snipcache`.
-- `appsettings.Production.json`: all non-secret keys from the table above.
+- `secrets.env.example`: template that `-Setup` installs once as the secrets file.
+- `appsettings.Production.json`: all non-secret keys from the table above
+  (Keycloak realm `cestius`, `Auth:RequiredRole=snipcache-editor`).
 - Server paths: `/opt/snipcache` (backend), `/var/www/snipcache` (SPA),
   `/var/lib/snipcache/data` (logs, Data Protection keys).
+
+Dynamic DNS: `snipcache.duckdns.org` is kept current by a systemd timer on the
+server (`scripts/deploy/ddns/`, installed by `-Setup` because the app config sets
+`DuckDnsDomain`). Every 5 minutes it calls the DuckDNS update API with the
+host's stable global IPv6 address (AAAA) and lets DuckDNS take the IPv4 (A) from
+the request, which is the router's public address; the router forwards 80/443
+for IPv4. The DuckDNS token lives only in `/etc/duckdns/snipcache.token`
+(root, 600).
 
 Docker is not needed for v1. If the server moves to Docker later, the same
 image can wrap the published output; the configuration surface stays identical.
@@ -526,9 +536,10 @@ image can wrap the published output; the configuration surface stays identical.
 
 1. Choose the realm (existing `cestius` realm or a new one).
 2. Client `snipcache`: public, Standard flow, PKCE S256, client authentication
-   off. Valid redirect URIs: `https://snipcache.freeddns.org/auth/*` and
-   `https://localhost:5173/auth/*` for dev. Post-logout redirect:
-   `https://snipcache.freeddns.org/logged-out`. Web origins: both origins.
+   off. Valid redirect URIs: `https://snipcache.duckdns.org/auth/*` and
+   `https://localhost:5173/auth/*` for dev. Post-logout redirects:
+   `https://snipcache.duckdns.org/*` (the BFF returns to the site root) and
+   `https://localhost:5173/*`. Web origins: both origins.
 3. Optional: role `snipcache-editor` and a mapper that puts client roles into
    the `roles` claim **of the ID token** (the BFF reads claims from the ID token
    and maps only standard claims from userinfo); assign to your user and set
@@ -536,9 +547,11 @@ image can wrap the published output; the configuration surface stays identical.
 
 **Server**
 
-1. Point `snipcache.freeddns.org` at the server (dynamic DNS client).
-2. `./scripts/deploy/deploy.ps1 snipcache -Setup` once, then certbot for the
-   domain, then write `/etc/snipcache/secrets.env`.
+1. `./scripts/deploy/deploy.ps1 snipcache -Setup` once; write the DuckDNS token
+   to `/etc/duckdns/snipcache.token` and the values into
+   `/etc/snipcache/secrets.env`, then run `-Setup` again (enables the DuckDNS
+   timer, which points `snipcache.duckdns.org` at the server).
+2. certbot for the domain, then `-Setup` once more to switch nginx to HTTPS.
 3. `./scripts/deploy/deploy.ps1 snipcache` for every release.
 
 ---
@@ -652,10 +665,11 @@ redirect URI.
 Done when: a `curl` call creates a file in the content repo and the page
 appears on the site after the deploy.
 
-### Phase 6: Deployment to snipcache.freeddns.org
+### Phase 6: Deployment to snipcache.duckdns.org
 
 1. Copy `scripts/deploy` from Cestius, add the `snipcache` app config and
-   assets (nginx site, systemd unit, `appsettings.Production.json`).
+   assets (nginx site, systemd unit, `appsettings.Production.json`) and the
+   DuckDNS updater.
 2. Keycloak client and optional role (section 5).
 3. Server provisioning with `-Setup`, certbot, secrets file.
 4. First deploy; set `editor_url` in the content repo workflow; redeploy the

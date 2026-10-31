@@ -24,7 +24,12 @@ in phase 6). **Phase 5 (bot API)** is implemented: `POST /bot/snippets` with
 an `X-Api-Key` scheme, a C# port of the slug rule (`PageSlugs`) and
 [doc/bot-api.md](doc/bot-api.md); tested against the fake repository. Still
 open from its "done when": a `curl` save against the real repo (needs a
-deployed editor or a local run with the PAT). Next: phase 6 (deployment).
+deployed editor or a local run with the PAT). **Phase 6 (deployment)** is in
+progress: `scripts/deploy` (copied from Cestius) with the `snipcache` app
+config, nginx site, systemd unit, secrets template and a DuckDNS updater for
+`snipcache.duckdns.org` (replaces the planned `snipcache.freeddns.org`).
+Still open: server provisioning, Keycloak client, first deploy, `editor_url`
+in the content repo and the end-to-end check.
 
 Repositories (all public, owner `f4b4`):
 
@@ -162,6 +167,28 @@ pnpm --filter editor generate:api       # Orval: openapi.json → src/api/genera
   textarea; Vitest runs `frontend/**` under jsdom and `site/**` plus
   `content-rules` under Node (projects in `vitest.config.ts`).
 
+Deployment (`scripts/deploy`, plan section 4.5, details in
+[scripts/deploy/README.md](scripts/deploy/README.md)): PowerShell 7, ssh alias
+`tank` with passwordless sudo.
+
+```sh
+pnpm deploy:snipcache                   # = pwsh ./scripts/deploy/deploy.ps1 snipcache (client + server)
+pwsh ./scripts/deploy/deploy.ps1 snipcache -Setup        # first time / after cert or token changes
+pwsh ./scripts/deploy/deploy.ps1 snipcache -ServerOnly   # also -ClientOnly, -ConfigOnly
+```
+
+- Server: Kestrel on `127.0.0.1:5004`, `/opt/snipcache`, `/var/www/snipcache`,
+  `/var/lib/snipcache/data` (logs, dp-keys); prod config in
+  `scripts/deploy/apps/snipcache/appsettings.Production.json` (Keycloak realm
+  `cestius`, `Auth:RequiredRole=snipcache-editor`).
+- Secrets only on the server: `/etc/snipcache/secrets.env` (`GitHub__Token`,
+  `Bot__ApiKey`; installed once from `secrets.env.example`) and
+  `/etc/duckdns/snipcache.token`. Never commit the DuckDNS token (public repo).
+- `duckdns@snipcache.timer` updates AAAA (stable global IPv6) and A (router's
+  public IPv4, detected by DuckDNS) every 5 minutes.
+- The `/api` policy names the cookie scheme so a missing session is 401, not
+  the OIDC redirect (covered by `KeycloakChallengeTests`).
+
 pnpm enforces a minimum release age for new dependency versions. When an
 install fails because a version is too new, require an older one instead of
 adding `minimumReleaseAgeExclude` entries (pnpm may write them into
@@ -189,7 +216,7 @@ and the editor (`backend/` ASP.NET Core 10 minimal API, `frontend/` React + Mona
 A **template repo** (`snipcache-template`) is what users clone; it contains only
 folders of snippet files plus one workflow named **"Deploy SnipCache"** that builds
 the site and a Pagefind search index on every push and publishes to GitHub Pages.
-The **editor** at `https://snipcache.freeddns.org` authenticates with Keycloak
+The **editor** at `https://snipcache.duckdns.org` authenticates with Keycloak
 (BFF pattern: OIDC code flow + PKCE on the server, HttpOnly cookie, CSRF header),
 reads and writes the content repo through the GitHub REST API via Octokit.net (one
 commit per save), and offers a bot endpoint `POST /bot/snippets` with an API key.

@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -50,6 +51,9 @@ public sealed class EditorFactory(string? requiredRole = null, string? botApiKey
                 o.DefaultChallengeScheme = TestAuthHandler.SchemeName;
                 o.DefaultForbidScheme = TestAuthHandler.SchemeName;
             });
+            // The /api policy names the cookie scheme; let it hand everything to the test handler.
+            services.PostConfigure<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme,
+                o => o.ForwardDefault = TestAuthHandler.SchemeName);
         });
     }
 

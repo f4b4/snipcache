@@ -9,7 +9,8 @@
     "dev": "pnpm --filter editor dev",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "deploy:snipcache": "pwsh ./scripts/deploy/deploy.ps1 snipcache"
   },
   "engines": {
     "node": ">=22.12"

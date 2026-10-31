@@ -34,3 +34,15 @@ pnpm test         # run all Vitest tests
 dotnet build SnipCache.slnx
 dotnet test --solution SnipCache.slnx
 ```
+
+## Deployment
+
+The editor runs at `https://snipcache.duckdns.org` (systemd + nginx on the
+owner's server, DNS via DuckDNS). Deploys use PowerShell 7 and an ssh alias
+`tank`:
+
+```sh
+pnpm deploy:snipcache                 # = pwsh ./scripts/deploy/deploy.ps1 snipcache
+```
+
+First-time setup, secrets, DuckDNS and HTTPS: [scripts/deploy/README.md](scripts/deploy/README.md).

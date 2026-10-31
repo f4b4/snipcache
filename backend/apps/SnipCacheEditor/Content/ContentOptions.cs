@@ -31,7 +31,7 @@ public sealed class GitHubOptions
 
     public string CommitterName { get; set; } = "SnipCache";
 
-    public string CommitterEmail { get; set; } = "noreply@snipcache.freeddns.org";
+    public string CommitterEmail { get; set; } = "noreply@snipcache.duckdns.org";
 
     /// <summary><c>owner/repository</c>.</summary>
     public string FullName => $"{Owner}/{Repository}";

@@ -16,7 +16,7 @@ on:
         type: string
         default: SnipCache
       editor_url:
-        description: SnipCache editor origin, e.g. https://snipcache.freeddns.org. Empty hides the edit links.
+        description: SnipCache editor origin, e.g. https://snipcache.duckdns.org. Empty hides the edit links.
         type: string
         default: ''
       builder_ref:

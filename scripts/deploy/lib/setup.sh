@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# First-time provisioning for a Cestius app. App-agnostic: every value comes from
+# First-time provisioning for an app. App-agnostic: every value comes from
 # the deploy.env that deploy.ps1 generated and uploaded. Idempotent — safe to re-run.
 #
 # Invoked by deploy.ps1 as:  bash -s -- <UPLOAD_DIR>   (streamed over SSH stdin)
@@ -10,6 +10,7 @@ UPLOAD_DIR="${1:?upload dir arg missing}"
 source "$UPLOAD_DIR/deploy.env"
 
 : "${APP_NAME:?}" "${DOMAIN:?}" "${SERVICE_USER:?}"
+DUCKDNS_DOMAIN="${DUCKDNS_DOMAIN:-}"
 
 echo "--- Service account ($SERVICE_USER) ---"
 if ! id "$SERVICE_USER" &>/dev/null; then
@@ -29,6 +30,20 @@ sudo mkdir -p /var/www/certbot                      # ACME challenge web root
 sudo chown -R "$SERVICE_USER:$SERVICE_USER" "/opt/$APP_NAME" "/var/lib/$APP_NAME"
 sudo chmod 700 "/var/lib/$APP_NAME/data/dp-keys"
 sudo chown -R www-data:www-data "/var/www/$APP_NAME"
+
+echo "--- Secrets file ---"
+# Installed once from the template and never overwritten: it holds the real values.
+# systemd reads it as root (EnvironmentFile=), so 600 is enough.
+SECRETS="/etc/$APP_NAME/secrets.env"
+if [ ! -f "$UPLOAD_DIR/config/secrets.env.example" ]; then
+    echo "no template -> app has no secrets file."
+elif sudo test -f "$SECRETS"; then
+    echo "$SECRETS already exists (left untouched)."
+else
+    sudo install -d -m 750 -o root -g "$SERVICE_USER" "/etc/$APP_NAME"
+    sudo install -m 600 -o root -g "$SERVICE_USER" "$UPLOAD_DIR/config/secrets.env.example" "$SECRETS"
+    echo "created $SECRETS from the template — fill in the values (sudoedit $SECRETS)."
+fi
 
 echo "--- nginx site ---"
 # Chicken-and-egg: the committed nginx.conf is HTTPS-only and references the
@@ -76,20 +91,41 @@ sudo cp "$UPLOAD_DIR/config/$APP_NAME.service" "/etc/systemd/system/$APP_NAME.se
 sudo systemctl daemon-reload
 sudo systemctl enable "$APP_NAME"
 
+if [ -n "$DUCKDNS_DOMAIN" ]; then
+    echo "--- DuckDNS updater ($DUCKDNS_DOMAIN.duckdns.org) ---"
+    sudo install -m 755 "$UPLOAD_DIR/ddns/duckdns-update.sh" /usr/local/bin/duckdns-update
+    sudo install -m 644 "$UPLOAD_DIR/ddns/duckdns@.service" "$UPLOAD_DIR/ddns/duckdns@.timer" /etc/systemd/system/
+    sudo systemctl daemon-reload
+    # The token never comes from the repo: create an empty root-only file once.
+    TOKEN="/etc/duckdns/$DUCKDNS_DOMAIN.token"
+    sudo install -d -m 700 /etc/duckdns
+    sudo test -f "$TOKEN" || sudo install -m 600 /dev/null "$TOKEN"
+    if sudo test -s "$TOKEN"; then
+        sudo systemctl enable --now "duckdns@$DUCKDNS_DOMAIN.timer"
+        sudo systemctl start "duckdns@$DUCKDNS_DOMAIN.service"
+        sudo journalctl -u "duckdns@$DUCKDNS_DOMAIN.service" -n 1 --no-pager -o cat
+    else
+        echo "no token yet -> timer not enabled. Write the token, then re-run -Setup:"
+        echo "  sudoedit $TOKEN"
+    fi
+fi
+
 cat <<EOF
 
 =======================================================
 Setup complete for '$APP_NAME'.
 
 NEXT STEPS (once only):
-  1. DNS: point $DOMAIN at this host.
+  1. DNS: point $DOMAIN at this host (DuckDNS timer above, if configured).
 
-  2. Keycloak: in the 'cestius' realm, add to the '$APP_NAME' client:
-       - Valid redirect URI:  https://$DOMAIN/*
+  2. Keycloak: the '$APP_NAME' client needs:
+       - Valid redirect URI:  https://$DOMAIN/auth/*
        - Web origin:          https://$DOMAIN
        - Valid post-logout:   https://$DOMAIN/*
 
-  3. Enable HTTPS (after DNS resolves here):
+  3. Secrets: fill in /etc/$APP_NAME/secrets.env if the app has one.
+
+  4. Enable HTTPS (after DNS resolves here):
        a. Issue the cert (certbot only writes to /etc/letsencrypt, never nginx.conf):
             sudo certbot certonly --webroot -w /var/www/certbot -d $DOMAIN
        b. Re-run setup to swap the HTTP bootstrap for the committed HTTPS config:

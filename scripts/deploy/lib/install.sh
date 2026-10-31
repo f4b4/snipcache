@@ -55,6 +55,12 @@ echo "--- Refreshing systemd unit ---"
 sudo cp "$UPLOAD_DIR/config/$APP_NAME.service" "/etc/systemd/system/$APP_NAME.service"
 sudo systemctl daemon-reload
 
+# An empty KEY= line in the secrets file means setup's template was never filled in.
+SECRETS="/etc/$APP_NAME/secrets.env"
+if sudo test -f "$SECRETS" && sudo grep -qE '^[A-Za-z_]+=$' "$SECRETS"; then
+    echo "WARNING: $SECRETS still has empty values — the service will likely fail to start."
+fi
+
 echo "--- Starting services ---"
 sudo systemctl start "$APP_NAME"
 sudo systemctl reload nginx
