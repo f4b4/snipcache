@@ -65,6 +65,7 @@ else
 # nginx.conf on the next -Setup once the cert exists. Do not edit by hand.
 server {
     listen 80;
+    listen [::]:80;
     server_name $DOMAIN;
     location /.well-known/acme-challenge/ { root /var/www/certbot; }
     location / { return 503; }
