@@ -33,6 +33,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  window.localStorage.clear();
+  // Node 25+ has its own Web Storage globals; without --localstorage-file its
+  // localStorage is undefined and can shadow jsdom's (CI runs lts/* = 26).
+  window.localStorage?.clear();
   vi.unstubAllGlobals();
 });
